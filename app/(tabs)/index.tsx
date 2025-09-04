@@ -9,9 +9,11 @@ import {
   Dimensions,
   Alert,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { MapPin, Clock, DollarSign, Package, Star, Navigation, ChevronLeft, ChevronRight, Search, Calendar, CircleCheck as CheckCircle } from 'lucide-react-native';
-// Remove DateTimePicker import since it's not installed
+import { Calendar as CalendarComponent } from 'react-native-calendars';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import Header from '@/components/Header';
@@ -107,7 +109,7 @@ export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'find' | 'schedule' | 'completed'>('find');
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const generateDates = () => {
     const dates = [];
@@ -152,23 +154,64 @@ export default function HomeScreen() {
     setSelectedDate(dates[newIndex]);
   };
 
-  const handleDatePickerChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      const newIndex = dates.findIndex(date => 
-        date.toDateString() === selectedDate.toDateString()
-      );
-      if (newIndex !== -1) {
-        setCurrentDateIndex(newIndex);
-        setSelectedDate(selectedDate);
-      }
+  const handleCalendarDateSelect = (day: any) => {
+    const selectedDate = new Date(day.dateString);
+    const newIndex = dates.findIndex(date => 
+      date.toDateString() === selectedDate.toDateString()
+    );
+    if (newIndex !== -1) {
+      setCurrentDateIndex(newIndex);
+      setSelectedDate(selectedDate);
     }
+    setShowCalendar(false);
   };
 
   const openCalendar = () => {
-    // For now, we'll just show an alert since DateTimePicker is not installed
-    Alert.alert('Calendar', 'Date picker functionality would be implemented here');
-    // setShowDatePicker(true);
+    setShowCalendar(true);
+  };
+
+  // Generate marked dates for calendar
+  const getMarkedDates = () => {
+    const marked: any = {};
+    
+    // Mark dates that have jobs
+    jobs.forEach(job => {
+      const jobDate = new Date(job.date);
+      const dateString = jobDate.toISOString().split('T')[0];
+      
+      if (!marked[dateString]) {
+        marked[dateString] = {
+          marked: true,
+          dotColor: colors.primary,
+          dots: []
+        };
+      }
+      
+      // Add different colored dots for different job statuses
+      const statusColor = job.status === 'available' ? colors.success : 
+                         job.status === 'scheduled' ? colors.warning : colors.primary;
+      
+      marked[dateString].dots.push({
+        color: statusColor,
+        selectedDotColor: statusColor
+      });
+    });
+    
+    // Mark selected date
+    const selectedDateString = selectedDate.toISOString().split('T')[0];
+    if (marked[selectedDateString]) {
+      marked[selectedDateString].selected = true;
+      marked[selectedDateString].selectedColor = colors.primary;
+      marked[selectedDateString].selectedTextColor = '#ffffff';
+    } else {
+      marked[selectedDateString] = {
+        selected: true,
+        selectedColor: colors.primary,
+        selectedTextColor: '#ffffff'
+      };
+    }
+    
+    return marked;
   };
 
   // Filter jobs by selected date and tab
@@ -422,6 +465,75 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCalendar(false)}
+      >
+        <Pressable style={styles.calendarModalOverlay} onPress={() => setShowCalendar(false)}>
+          <View style={[styles.calendarContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.calendarHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.calendarTitle, { color: colors.text }]}>Select Date</Text>
+              <TouchableOpacity onPress={() => setShowCalendar(false)}>
+                <Text style={[styles.calendarClose, { color: colors.primary }]}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <CalendarComponent
+              current={selectedDate.toISOString().split('T')[0]}
+              onDayPress={handleCalendarDateSelect}
+              markedDates={getMarkedDates()}
+              markingType="multi-dot"
+              theme={{
+                backgroundColor: colors.card,
+                calendarBackground: colors.card,
+                textSectionTitleColor: colors.text,
+                selectedDayBackgroundColor: colors.primary,
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: colors.primary,
+                dayTextColor: colors.text,
+                textDisabledColor: colors.border,
+                dotColor: colors.primary,
+                selectedDotColor: '#ffffff',
+                arrowColor: colors.primary,
+                disabledArrowColor: colors.border,
+                monthTextColor: colors.text,
+                indicatorColor: colors.primary,
+                textDayFontFamily: 'System',
+                textMonthFontFamily: 'System',
+                textDayHeaderFontFamily: 'System',
+                textDayFontWeight: '500',
+                textMonthFontWeight: '700',
+                textDayHeaderFontWeight: '600',
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+                textDayHeaderFontSize: 14,
+              }}
+            />
+            
+            <View style={[styles.calendarLegend, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+              <Text style={[styles.legendTitle, { color: colors.text }]}>Legend</Text>
+              <View style={styles.legendItems}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Available Jobs</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.warning }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Scheduled Jobs</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
+                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Completed Jobs</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -701,5 +813,64 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginLeft: 6,
+  },
+  calendarModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  calendarContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  calendarTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  calendarClose: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  calendarLegend: {
+    padding: 16,
+    borderTopWidth: 1,
+  },
+  legendTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  legendItems: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
