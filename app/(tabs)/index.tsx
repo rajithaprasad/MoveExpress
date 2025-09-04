@@ -174,7 +174,7 @@ export default function HomeScreen() {
   const getMarkedDates = () => {
     const marked: any = {};
     
-    // Mark dates that have jobs
+    // Mark dates that have jobs with red circles
     jobs.forEach(job => {
       const jobDate = new Date(job.date);
       const dateString = jobDate.toISOString().split('T')[0];
@@ -182,19 +182,9 @@ export default function HomeScreen() {
       if (!marked[dateString]) {
         marked[dateString] = {
           marked: true,
-          dotColor: colors.primary,
-          dots: []
+          dotColor: '#ef4444',
         };
       }
-      
-      // Add different colored dots for different job statuses
-      const statusColor = job.status === 'available' ? colors.success : 
-                         job.status === 'scheduled' ? colors.warning : colors.primary;
-      
-      marked[dateString].dots.push({
-        color: statusColor,
-        selectedDotColor: statusColor
-      });
     });
     
     // Mark selected date
@@ -473,8 +463,9 @@ export default function HomeScreen() {
         animationType="slide"
         onRequestClose={() => setShowCalendar(false)}
       >
-        <Pressable style={styles.calendarModalOverlay} onPress={() => setShowCalendar(false)}>
-          <View style={[styles.calendarContainer, { backgroundColor: colors.card }]}>
+        <View style={styles.calendarModalOverlay}>
+          <Pressable style={styles.calendarBackdrop} onPress={() => setShowCalendar(false)} />
+          <View style={styles.calendarContainer}>
             <View style={[styles.calendarHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.calendarTitle, { color: colors.text }]}>Select Date</Text>
               <TouchableOpacity onPress={() => setShowCalendar(false)}>
@@ -486,21 +477,21 @@ export default function HomeScreen() {
               current={selectedDate.toISOString().split('T')[0]}
               onDayPress={handleCalendarDateSelect}
               markedDates={getMarkedDates()}
-              markingType="multi-dot"
+              markingType="simple"
               theme={{
-                backgroundColor: colors.card,
-                calendarBackground: colors.card,
-                textSectionTitleColor: colors.text,
+                backgroundColor: '#ffffff',
+                calendarBackground: '#ffffff',
+                textSectionTitleColor: '#1e293b',
                 selectedDayBackgroundColor: colors.primary,
                 selectedDayTextColor: '#ffffff',
                 todayTextColor: colors.primary,
-                dayTextColor: colors.text,
-                textDisabledColor: colors.border,
-                dotColor: colors.primary,
+                dayTextColor: '#1e293b',
+                textDisabledColor: '#94a3b8',
+                dotColor: '#ef4444',
                 selectedDotColor: '#ffffff',
                 arrowColor: colors.primary,
-                disabledArrowColor: colors.border,
-                monthTextColor: colors.text,
+                disabledArrowColor: '#94a3b8',
+                monthTextColor: '#1e293b',
                 indicatorColor: colors.primary,
                 textDayFontFamily: 'System',
                 textMonthFontFamily: 'System',
@@ -513,26 +504,8 @@ export default function HomeScreen() {
                 textDayHeaderFontSize: 14,
               }}
             />
-            
-            <View style={[styles.calendarLegend, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-              <Text style={[styles.legendTitle, { color: colors.text }]}>Legend</Text>
-              <View style={styles.legendItems}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Available Jobs</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.warning }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Scheduled Jobs</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-                  <Text style={[styles.legendText, { color: colors.textSecondary }]}>Completed Jobs</Text>
-                </View>
-              </View>
-            </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -816,61 +789,46 @@ const styles = StyleSheet.create({
   },
   calendarModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+  },
+  calendarBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   calendarContainer: {
-    width: '100%',
-    maxWidth: 400,
+    backgroundColor: '#ffffff',
+    marginHorizontal: 20,
+    maxWidth: 380,
+    width: '90%',
     borderRadius: 16,
-    overflow: 'hidden',
     elevation: 8,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
+    overflow: 'hidden',
   },
   calendarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   calendarTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: '#1e293b',
   },
   calendarClose: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  calendarLegend: {
-    padding: 16,
-    borderTopWidth: 1,
-  },
-  legendTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  legendItems: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  legendText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
 });
