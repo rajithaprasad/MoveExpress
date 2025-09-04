@@ -13,10 +13,10 @@ import {
   Pressable,
 } from 'react-native';
 import { MapPin, Clock, DollarSign, Package, Star, Navigation, ChevronLeft, ChevronRight, Search, Calendar, CircleCheck as CheckCircle } from 'lucide-react-native';
-import DatePicker from 'react-native-date-picker';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import Header from '@/components/Header';
+import DatePickerModal from '@/components/DatePickerModal';
 
 const { width } = Dimensions.get('window');
 
@@ -155,14 +155,13 @@ export default function HomeScreen() {
   };
 
   const handleDateSelect = (date: Date) => {
-    const newIndex = dates.findIndex(date => 
-      date.toDateString() === date.toDateString()
+    const newIndex = dates.findIndex(d => 
+      d.toDateString() === date.toDateString()
     );
     if (newIndex !== -1) {
       setCurrentDateIndex(newIndex);
       setSelectedDate(date);
     }
-    setShowDatePicker(false);
   };
 
   const openDatePicker = () => {
@@ -261,6 +260,17 @@ export default function HomeScreen() {
       default:
         return null;
     }
+  };
+
+  // Get all dates that have jobs for marking
+  const getMarkedDates = () => {
+    const markedDates: string[] = [];
+    jobs.forEach(job => {
+      if (!markedDates.includes(job.date)) {
+        markedDates.push(job.date);
+      }
+    });
+    return markedDates;
   };
 
   return (
@@ -421,22 +431,13 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Modern Date Picker */}
-      <DatePicker
-        modal
-        open={showDatePicker}
-        date={selectedDate}
-        mode="date"
-        onConfirm={handleDateSelect}
-        onCancel={() => setShowDatePicker(false)}
-        title="Select Date"
-        confirmText="Select"
-        cancelText="Cancel"
-        theme="light"
-        textColor="#1e293b"
-        dividerColor="#e2e8f0"
-        buttonColor={colors.primary}
-        backgroundColor="#ffffff"
+      {/* Custom Date Picker Modal */}
+      <DatePickerModal
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        onDateSelect={handleDateSelect}
+        selectedDate={selectedDate}
+        markedDates={getMarkedDates()}
       />
     </SafeAreaView>
   );
