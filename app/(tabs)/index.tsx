@@ -16,7 +16,7 @@ import { MapPin, Clock, DollarSign, Package, Star, Navigation, ChevronLeft, Chev
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import Header from '@/components/Header';
-import DatePickerModal from '@/components/DatePickerModal';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width } = Dimensions.get('window');
 
