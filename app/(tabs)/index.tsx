@@ -164,6 +164,13 @@ export default function HomeScreen() {
     }
   };
 
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      handleDateSelect(selectedDate);
+    }
+  };
+
   const openDatePicker = () => {
     setShowDatePicker(true);
   };
@@ -260,17 +267,6 @@ export default function HomeScreen() {
       default:
         return null;
     }
-  };
-
-  // Get all dates that have jobs for marking
-  const getMarkedDates = () => {
-    const markedDates: string[] = [];
-    jobs.forEach(job => {
-      if (!markedDates.includes(job.date)) {
-        markedDates.push(job.date);
-      }
-    });
-    return markedDates;
   };
 
   return (
@@ -431,14 +427,17 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Custom Date Picker Modal */}
-      <DatePickerModal
-        visible={showDatePicker}
-        onClose={() => setShowDatePicker(false)}
-        onDateSelect={handleDateSelect}
-        selectedDate={selectedDate}
-        markedDates={getMarkedDates()}
-      />
+      {/* Native Date Picker */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onDateChange}
+          minimumDate={new Date(2024, 0, 1)}
+          maximumDate={new Date(2025, 11, 31)}
+        />
+      )}
     </SafeAreaView>
   );
 }
