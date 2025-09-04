@@ -13,7 +13,7 @@ import {
   Pressable,
 } from 'react-native';
 import { MapPin, Clock, DollarSign, Package, Star, Navigation, ChevronLeft, ChevronRight, Search, Calendar, CircleCheck as CheckCircle } from 'lucide-react-native';
-import { Calendar as CalendarComponent } from 'react-native-calendars';
+import DatePicker from 'react-native-date-picker';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import Header from '@/components/Header';
@@ -109,7 +109,7 @@ export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentDateIndex, setCurrentDateIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'find' | 'schedule' | 'completed'>('find');
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const generateDates = () => {
     const dates = [];
@@ -154,54 +154,19 @@ export default function HomeScreen() {
     setSelectedDate(dates[newIndex]);
   };
 
-  const handleCalendarDateSelect = (day: any) => {
-    const selectedDate = new Date(day.dateString);
+  const handleDateSelect = (date: Date) => {
     const newIndex = dates.findIndex(date => 
-      date.toDateString() === selectedDate.toDateString()
+      date.toDateString() === date.toDateString()
     );
     if (newIndex !== -1) {
       setCurrentDateIndex(newIndex);
-      setSelectedDate(selectedDate);
+      setSelectedDate(date);
     }
-    setShowCalendar(false);
+    setShowDatePicker(false);
   };
 
-  const openCalendar = () => {
-    setShowCalendar(true);
-  };
-
-  // Generate marked dates for calendar
-  const getMarkedDates = () => {
-    const marked: any = {};
-    
-    // Mark dates that have jobs with red circles
-    jobs.forEach(job => {
-      const jobDate = new Date(job.date);
-      const dateString = jobDate.toISOString().split('T')[0];
-      
-      if (!marked[dateString]) {
-        marked[dateString] = {
-          marked: true,
-          dotColor: '#ef4444',
-        };
-      }
-    });
-    
-    // Mark selected date
-    const selectedDateString = selectedDate.toISOString().split('T')[0];
-    if (marked[selectedDateString]) {
-      marked[selectedDateString].selected = true;
-      marked[selectedDateString].selectedColor = colors.primary;
-      marked[selectedDateString].selectedTextColor = '#ffffff';
-    } else {
-      marked[selectedDateString] = {
-        selected: true,
-        selectedColor: colors.primary,
-        selectedTextColor: '#ffffff'
-      };
-    }
-    
-    return marked;
+  const openDatePicker = () => {
+    setShowDatePicker(true);
   };
 
   // Filter jobs by selected date and tab
@@ -334,7 +299,7 @@ export default function HomeScreen() {
               
               <TouchableOpacity 
                 style={[styles.calendarButton, { backgroundColor: colors.primary }]} 
-                onPress={openCalendar}
+                onPress={openDatePicker}
               >
                 <Calendar size={20} color="#ffffff" />
               </TouchableOpacity>
@@ -456,57 +421,23 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <View style={styles.calendarModalOverlay}>
-          <Pressable style={styles.calendarBackdrop} onPress={() => setShowCalendar(false)} />
-          <View style={styles.calendarContainer}>
-            <View style={[styles.calendarHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.calendarTitle, { color: colors.text }]}>Select Date</Text>
-              <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Text style={[styles.calendarClose, { color: colors.primary }]}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <CalendarComponent
-              current={selectedDate.toISOString().split('T')[0]}
-              onDayPress={handleCalendarDateSelect}
-              markedDates={getMarkedDates()}
-              markingType="simple"
-              theme={{
-                backgroundColor: '#ffffff',
-                calendarBackground: '#ffffff',
-                textSectionTitleColor: '#1e293b',
-                selectedDayBackgroundColor: colors.primary,
-                selectedDayTextColor: '#ffffff',
-                todayTextColor: colors.primary,
-                dayTextColor: '#1e293b',
-                textDisabledColor: '#94a3b8',
-                dotColor: '#ef4444',
-                selectedDotColor: '#ffffff',
-                arrowColor: colors.primary,
-                disabledArrowColor: '#94a3b8',
-                monthTextColor: '#1e293b',
-                indicatorColor: colors.primary,
-                textDayFontFamily: 'System',
-                textMonthFontFamily: 'System',
-                textDayHeaderFontFamily: 'System',
-                textDayFontWeight: '500',
-                textMonthFontWeight: '700',
-                textDayHeaderFontWeight: '600',
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14,
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+      {/* Modern Date Picker */}
+      <DatePicker
+        modal
+        open={showDatePicker}
+        date={selectedDate}
+        mode="date"
+        onConfirm={handleDateSelect}
+        onCancel={() => setShowDatePicker(false)}
+        title="Select Date"
+        confirmText="Select"
+        cancelText="Cancel"
+        theme="light"
+        textColor="#1e293b"
+        dividerColor="#e2e8f0"
+        buttonColor={colors.primary}
+        backgroundColor="#ffffff"
+      />
     </SafeAreaView>
   );
 }
@@ -786,49 +717,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginLeft: 6,
-  },
-  calendarModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  calendarContainer: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 20,
-    maxWidth: 380,
-    width: '90%',
-    borderRadius: 16,
-    elevation: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    overflow: 'hidden',
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  calendarTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  calendarClose: {
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
